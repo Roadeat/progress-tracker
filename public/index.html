@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>資訊股每周工作進度</title>
+  <script defer src="main.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      display: flex;
+      gap: 40px;
+    }
+    .left-panel, .right-panel {
+      flex: 1;
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .progress-row select,
+    .progress-row input {
+      padding: 5px;
+    }
+    .prev-progress {
+      color: gray;
+      white-space: pre-wrap;
+      max-width: 300px;
+    }
+    .result-message {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    button {
+      padding: 6px 10px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .ranking-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+    #rankingContainer div {
+      margin-bottom: 6px;
+    }
+    /* 尚未繳交紅色 */
+    .not-submitted {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 左側：進度填寫區 -->
+  <div class="left-panel">
+    <h1>資訊股每周工作進度</h1>
+
+    <!-- 區塊一：選擇時間 -->
+<div class="section">
+  <label>日期</label>
+  <div id="dateDisplay" class="form-control" style="background-color:#f9f9f9;"></div>
+</div>
+
+    <!-- 區塊二：承辦人 -->
+    <div class="section">
+      <label for="staffSelect">承辦人：</label>
+      <select id="staffSelect"></select>
+    </div>
+
+    <!-- 區塊三：採購案履約管理 -->
+    <div class="section">
+      <h3>採購案履約管理</h3>
+      <textarea id="procurementInput" rows="4" cols="60"></textarea>
+      <div id="prev1" class="prev-progress"></div>
+    </div>
+
+    <!-- 區塊四：重要工作 -->
+    <div class="section">
+      <h3>重要工作</h3>
+      <textarea id="importantInput" rows="4" cols="60"></textarea>
+      <div id="prev2" class="prev-progress"></div>
+    </div>
+
+    <!-- 區塊五：送出與匯出 -->
+    <div class="section">
+      <h3>送出與匯出</h3>
+      <button type="button" onclick="submitProgress()">✅ 送出</button>
+          </div>
+
+    <!-- 區塊六：送出結果 -->
+    <div class="section">
+      <h3>送出結果</h3>
+      <div id="resultContainer" class="result-message"></div>
+    </div>
+  
+
+  </div>
+
+  <!-- 右側：承辦人排行榜 -->
+  <div class="right-panel">
+    <div class="ranking-title">📊 排行榜</div>
+    <div id="rankingContainer">載入中...</div>
+
+        <!-- 區塊七：本週彙整進度 -->
+<div class="section" style="width: 100%;">
+  <h2>🗂️ 本週彙整進度</h2>
+  <div id="weeklySummary">載入中...</div>
+</div>
+  </div>
+
+</body>
+</html>
