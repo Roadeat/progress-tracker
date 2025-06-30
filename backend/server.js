@@ -8,7 +8,12 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// 註冊路由
 const progressRoutes = require('./routes/progress');
 app.use('/api', progressRoutes);
 
-app.listen(3000, () => console.log('Server running at http://localhost:3000'));
+// ✅ 只留這一段 listen，使用 Render 要求的 PORT
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
