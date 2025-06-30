@@ -17,3 +17,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// 加一個首頁的簡單路由
+app.get('/', (req, res) => {
+  res.send('🚀 Progress Tracker backend is running!');
+});
