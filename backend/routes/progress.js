@@ -1,13 +1,10 @@
-// ✅ routes/progress.js（已整合新需求：只選一位承辦人，分兩個欄位填寫，並新增排行榜 API）
-
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); // Pool 實例
 
 // 1. 查詢所有承辦人（排序 by name）
 router.get('/staff', async (req, res) => {
   try {
-    const result = await db.query('SELECT id, name FROM staff ORDER BY name');
+    const result = await req.db.query('SELECT id, name FROM staff ORDER BY name');
     res.json(result.rows);
   } catch (err) {
     console.error('查詢 staff 錯誤', err);
@@ -25,7 +22,7 @@ router.get('/staff/rankings', async (req, res) => {
   thisThursday.setHours(0, 0, 0, 0);
 
   try {
-    const result = await db.query(`
+    const result = await req.db.query(`
       SELECT s.id, s.name, MAX(p.updated_at) AS latest
       FROM staff s
       LEFT JOIN progress p ON p.staff_id = s.id AND p.updated_at >= $1
@@ -46,7 +43,7 @@ router.get('/progress/previous', async (req, res) => {
   if (!staffId || !category) return res.status(400).json({ error: '缺少參數' });
 
   try {
-    const result = await db.query(
+    const result = await req.db.query(
       `SELECT content FROM progress 
        WHERE staff_id = $1 AND category = $2
        ORDER BY date DESC, updated_at DESC 
@@ -60,7 +57,7 @@ router.get('/progress/previous', async (req, res) => {
   }
 });
 
-// 3. 儲存進度資料（採購案履約管理、重要工作各一筆）
+// 3. 儲存進度資料
 router.post('/progress', async (req, res) => {
   const { year, date, collectorId, data } = req.body;
   if (!year || !date || !Array.isArray(data)) {
@@ -68,7 +65,7 @@ router.post('/progress', async (req, res) => {
   }
 
   console.log('收到進度資料：', data);
-  const client = await db.connect();
+  const client = await req.db.connect();
 
   try {
     await client.query('BEGIN');
@@ -76,7 +73,6 @@ router.post('/progress', async (req, res) => {
     for (const entry of data) {
       let staffId = entry.staffId;
 
-      // 若無 staffId，依照 staffName 查詢或新增
       if (!staffId && entry.staffName) {
         const search = await client.query('SELECT id FROM staff WHERE name = $1', [entry.staffName]);
         if (search.rows.length > 0) {
@@ -111,24 +107,20 @@ router.post('/progress', async (req, res) => {
   }
 });
 
-// 4. 排行榜：依本週四後填報時間排序，尚未填報者加註，名次 + 皇冠
+// 4. 排行榜
 router.get('/ranking', async (req, res) => {
   try {
     const now = new Date();
-
-    // 找出本週五 00:00:00 作為排行榜開始時間
     const currentDay = now.getDay();
     const daysSinceFriday = (currentDay + 7 - 5) % 7;
     const thisFriday = new Date(now);
     thisFriday.setDate(now.getDate() - daysSinceFriday);
     thisFriday.setHours(0, 0, 0, 0);
 
-    // 取得所有承辦人
-    const staffResult = await db.query(`SELECT id, name FROM staff ORDER BY name`);
+    const staffResult = await req.db.query(`SELECT id, name FROM staff ORDER BY name`);
     const staffMap = new Map(staffResult.rows.map(s => [s.id, s.name]));
 
-    // 查詢本週五以後，每人各類別的填報（排除空白內容）
-    const progressResult = await db.query(`
+    const progressResult = await req.db.query(`
       SELECT staff_id, category, MAX(updated_at) AS updated_at
       FROM progress
       WHERE updated_at >= $1
@@ -136,7 +128,6 @@ router.get('/ranking', async (req, res) => {
       GROUP BY staff_id, category
     `, [thisFriday]);
 
-    // 整理每人填報時間
     const progressMap = new Map();
     for (const row of progressResult.rows) {
       const sid = Number(row.staff_id);
@@ -153,7 +144,7 @@ router.get('/ranking', async (req, res) => {
       const hasProcurement = catTimes?.['採購案履約管理'];
       const hasImportant = catTimes?.['重要工作'];
 
-      if (hasProcurement || hasImportant) {  // <-- 改成 || ，只要有一項就算繳交
+      if (hasProcurement || hasImportant) {
         const latest = new Date(Math.max(
           hasProcurement?.getTime() || 0,
           hasImportant?.getTime() || 0
@@ -173,10 +164,9 @@ router.get('/ranking', async (req, res) => {
       }
     }
 
-    // 排序：完成者依提交時間早到晚；未完成者最後
     ranking.sort((a, b) => {
       if (a.status === 'submitted' && b.status === 'submitted') {
-        return a.submittedAt.getTime() - b.submittedAt.getTime();  // <-- 轉成時間戳
+        return a.submittedAt.getTime() - b.submittedAt.getTime();
       } else if (a.status === 'submitted') {
         return -1;
       } else if (b.status === 'submitted') {
@@ -193,19 +183,17 @@ router.get('/ranking', async (req, res) => {
   }
 });
 
-// 5. 彙整本週填報內容：分兩類呈現（採購案履約管理、重要工作）
+// 5. 彙整本週填報內容
 router.get('/summary', async (req, res) => {
   try {
     const now = new Date();
-
-    // 找本週五 00:00:00 起為統計起始時間
-    const currentDay = now.getDay(); // 0=Sun, ..., 5=Fri
+    const currentDay = now.getDay();
     const daysSinceFriday = (currentDay + 7 - 5) % 7;
     const thisFriday = new Date(now);
     thisFriday.setDate(now.getDate() - daysSinceFriday);
     thisFriday.setHours(0, 0, 0, 0);
 
-    const result = await db.query(`
+    const result = await req.db.query(`
       SELECT s.name AS staff_name, p.category, p.content
       FROM progress p
       JOIN staff s ON s.id = p.staff_id
@@ -235,7 +223,5 @@ router.get('/summary', async (req, res) => {
     res.status(500).json({ error: '無法取得彙整資料' });
   }
 });
-
-
 
 module.exports = router;
