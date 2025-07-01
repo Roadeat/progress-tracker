@@ -50,30 +50,41 @@ async function fetchAllPreviousProgress() {
   const prev1 = document.getElementById('prev1');
   const prev2 = document.getElementById('prev2');
 
+  // 採購案履約管理
   if (procurementInput && prev1) {
     procurementInput.value = '';
     prev1.innerText = '前次：載入中...';
     try {
       const res = await fetch(`/api/progress/previous?staffId=${staffId}&category=${encodeURIComponent('採購案履約管理')}`);
       const data = await res.json();
-      prev1.innerText = `前次：\n${data.content || '無'}`;
+      if (data && data.content) {
+        prev1.innerText = `前次：\n${data.content}`;
+      } else {
+        prev1.innerText = '前次：尚未填報';
+      }
     } catch (err) {
       prev1.innerText = '前次：載入錯誤';
     }
   }
 
+  // 重要工作
   if (importantInput && prev2) {
     importantInput.value = '';
     prev2.innerText = '前次：載入中...';
     try {
       const res = await fetch(`/api/progress/previous?staffId=${staffId}&category=${encodeURIComponent('重要工作')}`);
       const data = await res.json();
-      prev2.innerText = `前次：\n${data.content || '無'}`;
+      if (data && data.content) {
+        prev2.innerText = `前次：\n${data.content}`;
+      } else {
+        prev2.innerText = '前次：尚未填報';
+      }
     } catch (err) {
       prev2.innerText = '前次：載入錯誤';
     }
   }
 }
+
 
 
 async function loadRanking() {
