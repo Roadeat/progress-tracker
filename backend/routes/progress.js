@@ -194,12 +194,16 @@ router.get('/summary', async (req, res) => {
     thisFriday.setHours(0, 0, 0, 0);
 
     const result = await req.db.query(`
-      SELECT s.name AS staff_name, p.category, p.content
-      FROM progress p
-      JOIN staff s ON s.id = p.staff_id
-      WHERE p.updated_at >= $1
-        AND TRIM(COALESCE(p.content, '')) <> ''
-      ORDER BY p.category, s.name
+SELECT DISTINCT ON (p.staff_id, p.category)
+  s.name AS staff_name,
+  p.category,
+  p.content,
+  p.updated_at
+FROM progress p
+JOIN staff s ON s.id = p.staff_id
+WHERE p.updated_at >= $1
+  AND TRIM(COALESCE(p.content, '')) <> ''
+ORDER BY p.staff_id, p.category, p.updated_at DESC
     `, [thisFriday]);
 
     const procurement = [];
