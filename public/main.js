@@ -42,47 +42,82 @@ async function loadStaff() {
 }
 
 async function fetchAllPreviousProgress() {
-  const staffId = document.getElementById('staffSelect')?.value;
-  if (!staffId) return;
+    const staffId = document.getElementById('staffSelect')?.value;
+    // 新增：獲取當前頁面顯示的日期 (currentDate 變數已經是 YYYY-MM-DD 格式)
+    const currentInputDate = currentDate; 
 
-  const procurementInput = document.getElementById('procurementInput');
-  const importantInput = document.getElementById('importantInput');
-  const prev1 = document.getElementById('prev1');
-  const prev2 = document.getElementById('prev2');
+    console.log('--- fetchAllPreviousProgress 執行 ---');
+    console.log('當前選中的 staffId:', staffId);
+    console.log('用於查詢「前次」的基準日期:', currentInputDate); // 新增 log
 
-  // 採購案履約管理
-  if (procurementInput && prev1) {
-    procurementInput.value = '';
-    prev1.innerText = '前次：載入中...';
-    try {
-      const res = await fetch(`/api/progress/previous?staffId=${staffId}&category=${encodeURIComponent('採購案履約管理')}`);
-      const data = await res.json();
-      if (data && data.content) {
-        prev1.innerText = `前次：\n${data.content}`;
-      } else {
-        prev1.innerText = '前次：尚未填報';
-      }
-    } catch (err) {
-      prev1.innerText = '前次：載入錯誤';
+    if (!staffId) return;
+
+    const procurementInput = document.getElementById('procurementInput');
+    const importantInput = document.getElementById('importantInput');
+    const prev1 = document.getElementById('prev1');
+    const prev2 = document.getElementById('prev2');
+
+    // 採購案履約管理
+    if (procurementInput && prev1) {
+        procurementInput.value = '';
+        prev1.innerText = '前次：載入中...';
+        try {
+            const category1 = '採購案履約管理';
+            // 修改 URL：新增 currentInputDate 參數
+            const url1 = `/api/progress/previous?staffId=${staffId}&category=${encodeURIComponent(category1)}&currentDate=${currentInputDate}`;
+            console.log('發送請求到:', url1);
+            const res = await fetch(url1);
+            
+            if (!res.ok) {
+                console.error('❌ API 請求失敗，狀態碼:', res.status, await res.text());
+                prev1.innerText = '前次：載入錯誤 (API 失敗)';
+                return;
+            }
+            
+            const data = await res.json();
+            console.log(`收到 ${category1} 的前次數據:`, data);
+            
+            if (data && data.content) {
+                prev1.innerText = `前次：\n${data.content}`;
+            } else {
+                prev1.innerText = '前次：尚未填報';
+            }
+        } catch (err) {
+            console.error(`❌ 載入 ${category1} 前次進度失敗：`, err);
+            prev1.innerText = '前次：載入錯誤 (前端異常)';
+        }
     }
-  }
 
-  // 重要工作
-  if (importantInput && prev2) {
-    importantInput.value = '';
-    prev2.innerText = '前次：載入中...';
-    try {
-      const res = await fetch(`/api/progress/previous?staffId=${staffId}&category=${encodeURIComponent('重要工作')}`);
-      const data = await res.json();
-      if (data && data.content) {
-        prev2.innerText = `前次：\n${data.content}`;
-      } else {
-        prev2.innerText = '前次：尚未填報';
-      }
-    } catch (err) {
-      prev2.innerText = '前次：載入錯誤';
+    // 重要工作
+    if (importantInput && prev2) {
+        importantInput.value = '';
+        prev2.innerText = '前次：載入中...';
+        try {
+            const category2 = '重要工作';
+            // 修改 URL：新增 currentInputDate 參數
+            const url2 = `/api/progress/previous?staffId=${staffId}&category=${encodeURIComponent(category2)}&currentDate=${currentInputDate}`;
+            console.log('發送請求到:', url2);
+            const res = await fetch(url2);
+            
+            if (!res.ok) {
+                console.error('❌ API 請求失敗，狀態碼:', res.status, await res.text());
+                prev2.innerText = '前次：載入錯誤 (API 失敗)';
+                return;
+            }
+            
+            const data = await res.json();
+            console.log(`收到 ${category2} 的前次數據:`, data);
+            
+            if (data && data.content) {
+                prev2.innerText = `前次：\n${data.content}`;
+            } else {
+                prev2.innerText = '前次：尚未填報';
+            }
+        } catch (err) {
+            console.error(`❌ 載入 ${category2} 前次進度失敗：`, err);
+            prev2.innerText = '前次：載入錯誤 (前端異常)';
+        }
     }
-  }
 }
 
 

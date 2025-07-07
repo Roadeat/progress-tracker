@@ -37,33 +37,28 @@ router.get('/staff/rankings', async (req, res) => {
   }
 });
 
-// 2. 查詢某人、某類別的前次進度（只抓本週填報資料）
+// 2. 查詢某人、某類別、某日期「之前」的前次進度
 router.get('/progress/previous', async (req, res) => {
-  const { staffId, category } = req.query;
-  if (!staffId || !category) return res.status(400).json({ error: '缺少參數' });
-
-  // 取得本週五 00:00
-  const now = new Date();
-  const currentDay = now.getDay();
-  const daysSinceFriday = (currentDay + 7 - 5) % 7;
-  const thisFriday = new Date(now);
-  thisFriday.setDate(now.getDate() - daysSinceFriday);
-  thisFriday.setHours(0, 0, 0, 0);
-
-  try {
-    const result = await req.db.query(
-      `SELECT content FROM progress 
-       WHERE staff_id = $1 AND category = $2
-         AND updated_at >= $3
-       ORDER BY date DESC, updated_at DESC 
-       LIMIT 1`,
-      [staffId, category, thisFriday]
-    );
-    res.json(result.rows[0] || {}); // 若本週未填，回傳空 {}
-  } catch (err) {
-    console.error('查詢前次進度錯誤', err);
-    res.status(500).json({ error: '伺服器錯誤' });
+  const { staffId, category, currentDate } = req.query; // <-- 新增 currentDate
+  if (!staffId || !category || !currentDate) { // <-- 檢查 currentDate 是否存在
+      return res.status(400).json({ error: '缺少必要參數 (staffId, category, 或 currentDate)' });
   }
+
+  try {
+    const result = await req.db.query(
+      `SELECT content FROM progress
+       WHERE staff_id = $1
+         AND category = $2
+         AND date < $3::date -- <-- 新增條件：只找日期小於前端傳入日期的記錄
+       ORDER BY date DESC, updated_at DESC
+       LIMIT 1`,
+      [staffId, category, currentDate] // <-- 傳遞 currentDate 作為第三個參數
+    );
+    res.json(result.rows[0] || {});
+  } catch (err) {
+    console.error('查詢前次進度錯誤', err);
+    res.status(500).json({ error: '伺服器錯誤' });
+  }
 });
 
 // 3. 儲存進度資料
