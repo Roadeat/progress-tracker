@@ -48,8 +48,8 @@ router.get('/progress/previous', async (req, res) => {
     const result = await req.db.query(
       `SELECT content FROM progress
        WHERE staff_id = $1
-         AND category = $2
-         AND date < $3::date -- <-- 新增條件：只找日期小於前端傳入日期的記錄
+       AND category = $2
+       AND date < $3::date -- <-- 新增條件：只找日期小於前端傳入日期的記錄
        ORDER BY date DESC, updated_at DESC
        LIMIT 1`,
       [staffId, category, currentDate] // <-- 傳遞 currentDate 作為第三個參數
