@@ -7,10 +7,10 @@ function strokeCountSort(a, b) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadStaff();
   loadCurrentDate(); // ⬅ 加入這行，代入今日日期
+  await loadStaff();
   loadRanking();     // ⬅ 排行榜
-   loadWeeklySummary(); // ⬅ 新增
+  loadWeeklySummary(); // ⬅ 新增
 });
 
 function loadCurrentDate() {
